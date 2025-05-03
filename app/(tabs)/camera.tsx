@@ -3,12 +3,21 @@ import { Image, Pressable, StyleSheet, View } from 'react-native';
 import { Camera, CameraView } from 'expo-camera';
 import { Ionicons } from '@expo/vector-icons';
 import { FlipType, manipulateAsync, SaveFormat } from 'expo-image-manipulator';
+import * as MediaLibrary from 'expo-media-library';
 
 export default function CameraScreen() {
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [cameraType, setCameraType] = useState<'front' | 'back'>('back');
   const cameraRef = useRef<CameraView | null>(null);
+
+  const [status, requestPermission] = MediaLibrary.usePermissions();
+
+  useEffect(() => {
+    if (status?.status !== 'granted') {
+      requestPermission();
+    }
+  }, [status]);
 
   useEffect(() => {
     (async () => {
@@ -21,19 +30,22 @@ export default function CameraScreen() {
     if (cameraRef.current) {
       const photo = await cameraRef.current.takePictureAsync();
       try {
+        let finalUri = photo.uri;
+
         if (cameraType === 'front') {
           const manipulated = await manipulateAsync(
             photo.uri,
             [{ flip: FlipType.Horizontal }],
             { compress: 1, format: SaveFormat.JPEG },
           );
-          setPhotoUri(manipulated.uri);
-        } else {
-          setPhotoUri(photo.uri);
+          finalUri = manipulated.uri;
         }
+
+        // Only set the photo for preview; do not save yet
+        setPhotoUri(finalUri);
+        console.log('Photo captured for preview (not saved):', finalUri);
       } catch (error) {
-        console.error('Error flipping image:', error);
-        setPhotoUri(photo.uri);
+        console.error('Error capturing photo:', error);
       }
     }
   };
@@ -56,6 +68,23 @@ export default function CameraScreen() {
         { compress: 1, format: SaveFormat.JPEG },
       );
       setPhotoUri(flipped.uri);
+    }
+  };
+
+  const savePhotoManually = async () => {
+    if (photoUri) {
+      try {
+        const asset = await MediaLibrary.createAssetAsync(photoUri);
+        let album = await MediaLibrary.getAlbumAsync('picabit');
+        if (!album) {
+          album = await MediaLibrary.createAlbumAsync('picabit', asset, false);
+        } else {
+          await MediaLibrary.addAssetsToAlbumAsync([asset], album, false);
+        }
+        console.log('Manually saved photo to system album: picabit');
+      } catch (error) {
+        console.error('Error saving photo to gallery:', error);
+      }
     }
   };
 
@@ -86,7 +115,6 @@ export default function CameraScreen() {
           />
         </View>
       )}
-      s
       <View style={styles.controls}>
         {photoUri ? (
           <View style={styles.editControls}>
@@ -99,6 +127,9 @@ export default function CameraScreen() {
                 size={40}
                 color="white"
               />
+            </Pressable>
+            <Pressable onPress={savePhotoManually} style={styles.iconButton}>
+              <Ionicons name="save-outline" size={40} color="white" />
             </Pressable>
             <Pressable
               onPress={() => setPhotoUri(null)}
