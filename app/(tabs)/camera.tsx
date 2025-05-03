@@ -78,35 +78,17 @@ export default function CameraScreen() {
         flash="off"
       />
       {photoUri && (
-        <Image source={{ uri: photoUri }} style={styles.overlayImage} />
-      )}
-      <View style={styles.controls}>
-        <View style={styles.mainControls}>
-          {!photoUri && (
-            <>
-              <Pressable
-                onPress={() =>
-                  setCameraType((prev) => (prev === 'back' ? 'front' : 'back'))
-                }
-                style={styles.iconButton}
-              >
-                <Ionicons name="sync-outline" size={40} color="white" />
-              </Pressable>
-              <Pressable onPress={takePhoto} style={styles.iconButton}>
-                <Ionicons name="camera-outline" size={60} color="white" />
-              </Pressable>
-            </>
-          )}
-          {photoUri && (
-            <Pressable
-              onPress={() => setPhotoUri(null)}
-              style={styles.iconButton}
-            >
-              <Ionicons name="refresh-outline" size={40} color="white" />
-            </Pressable>
-          )}
+        <View style={styles.imageContainer}>
+          <Image
+            source={{ uri: photoUri }}
+            style={styles.imageFit}
+            resizeMode="contain"
+          />
         </View>
-        {photoUri && (
+      )}
+      s
+      <View style={styles.controls}>
+        {photoUri ? (
           <View style={styles.editControls}>
             <Pressable onPress={rotateImage} style={styles.iconButton}>
               <Ionicons name="refresh-circle-outline" size={40} color="white" />
@@ -117,6 +99,26 @@ export default function CameraScreen() {
                 size={40}
                 color="white"
               />
+            </Pressable>
+            <Pressable
+              onPress={() => setPhotoUri(null)}
+              style={styles.iconButton}
+            >
+              <Ionicons name="refresh-outline" size={40} color="white" />
+            </Pressable>
+          </View>
+        ) : (
+          <View style={styles.mainControls}>
+            <Pressable
+              onPress={() =>
+                setCameraType((prev) => (prev === 'back' ? 'front' : 'back'))
+              }
+              style={styles.iconButton}
+            >
+              <Ionicons name="sync-outline" size={40} color="white" />
+            </Pressable>
+            <Pressable onPress={takePhoto} style={styles.iconButton}>
+              <Ionicons name="camera-outline" size={60} color="white" />
             </Pressable>
           </View>
         )}
@@ -139,7 +141,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-around',
     width: '100%',
-    marginBottom: 10,
   },
   editControls: {
     flexDirection: 'row',
@@ -147,7 +148,7 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   iconButton: {
-    marginHorizontal: 20,
+    marginHorizontal: 30,
   },
   overlayImage: {
     ...StyleSheet.absoluteFillObject,
@@ -162,5 +163,19 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.3)',
     padding: 10,
     borderRadius: 30,
+  },
+  imageContainer: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: 'black',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  imageFit: {
+    width: '100%',
+    height: '100%',
   },
 });
