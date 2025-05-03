@@ -38,6 +38,27 @@ export default function CameraScreen() {
     }
   };
 
+  const rotateImage = async () => {
+    if (photoUri) {
+      const rotated = await manipulateAsync(photoUri, [{ rotate: 90 }], {
+        compress: 1,
+        format: SaveFormat.JPEG,
+      });
+      setPhotoUri(rotated.uri);
+    }
+  };
+
+  const flipImage = async () => {
+    if (photoUri) {
+      const flipped = await manipulateAsync(
+        photoUri,
+        [{ flip: FlipType.Horizontal }],
+        { compress: 1, format: SaveFormat.JPEG },
+      );
+      setPhotoUri(flipped.uri);
+    }
+  };
+
   if (hasPermission === null) return <View />;
   if (!hasPermission)
     return (
@@ -60,24 +81,44 @@ export default function CameraScreen() {
         <Image source={{ uri: photoUri }} style={styles.overlayImage} />
       )}
       <View style={styles.controls}>
-        <Pressable
-          onPress={() =>
-            setCameraType((prev) => (prev === 'back' ? 'front' : 'back'))
-          }
-          style={styles.iconButton}
-        >
-          <Ionicons name="camera-reverse" size={40} color="white" />
-        </Pressable>
-        <Pressable onPress={takePhoto} style={styles.iconButton}>
-          <Ionicons name="camera" size={60} color="white" />
-        </Pressable>
+        <View style={styles.mainControls}>
+          {!photoUri && (
+            <>
+              <Pressable
+                onPress={() =>
+                  setCameraType((prev) => (prev === 'back' ? 'front' : 'back'))
+                }
+                style={styles.iconButton}
+              >
+                <Ionicons name="sync-outline" size={40} color="white" />
+              </Pressable>
+              <Pressable onPress={takePhoto} style={styles.iconButton}>
+                <Ionicons name="camera-outline" size={60} color="white" />
+              </Pressable>
+            </>
+          )}
+          {photoUri && (
+            <Pressable
+              onPress={() => setPhotoUri(null)}
+              style={styles.iconButton}
+            >
+              <Ionicons name="refresh-outline" size={40} color="white" />
+            </Pressable>
+          )}
+        </View>
         {photoUri && (
-          <Pressable
-            onPress={() => setPhotoUri(null)}
-            style={styles.iconButton}
-          >
-            <Ionicons name="refresh" size={40} color="white" />
-          </Pressable>
+          <View style={styles.editControls}>
+            <Pressable onPress={rotateImage} style={styles.iconButton}>
+              <Ionicons name="refresh-circle-outline" size={40} color="white" />
+            </Pressable>
+            <Pressable onPress={flipImage} style={styles.iconButton}>
+              <Ionicons
+                name="swap-horizontal-outline"
+                size={40}
+                color="white"
+              />
+            </Pressable>
+          </View>
         )}
       </View>
     </View>
@@ -91,12 +132,19 @@ const styles = StyleSheet.create({
   controls: {
     position: 'absolute',
     bottom: 40,
-    flexDirection: 'row',
     width: '100%',
-    justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
-    paddingVertical: 10,
+  },
+  mainControls: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    width: '100%',
+    marginBottom: 10,
+  },
+  editControls: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    width: '100%',
   },
   iconButton: {
     marginHorizontal: 20,
