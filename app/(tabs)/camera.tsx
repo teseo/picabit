@@ -26,7 +26,7 @@ export default function CameraScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [rotation, setRotation] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
-  const cameraRef = useRef(null);
+  const cameraRef = useRef<CameraView>(null);
 
   useEffect(() => {
     (async () => {
