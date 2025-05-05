@@ -84,9 +84,9 @@ export default function CameraScreen() {
     if (photoUri) {
       try {
         const asset = await MediaLibrary.createAssetAsync(photoUri);
-        let album = await MediaLibrary.getAlbumAsync('picabit');
+        const album = await MediaLibrary.getAlbumAsync('picabit');
         if (!album) {
-          album = await MediaLibrary.createAlbumAsync('picabit', asset, false);
+          await MediaLibrary.createAlbumAsync('picabit', asset, false);
         } else {
           await MediaLibrary.addAssetsToAlbumAsync([asset], album, false);
         }
