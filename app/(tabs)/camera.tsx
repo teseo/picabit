@@ -3,6 +3,7 @@ import * as MediaLibrary from 'expo-media-library';
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system';
 import Toast from 'react-native-toast-message';
+import { FlipType, manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 import {
   ActivityIndicator,
   Image,
@@ -24,6 +25,30 @@ export default function CameraScreen() {
   const [cameraType, setCameraType] = useState('back');
   const [isLoading, setIsLoading] = useState(false);
   const cameraRef = useRef(null);
+
+  const rotateImage = async () => {
+    if (photoUri) {
+      const rotated = await manipulateAsync(photoUri, [{ rotate: 90 }], {
+        compress: 0.6,
+        format: SaveFormat.JPEG,
+      });
+      setPhotoUri(rotated.uri);
+    }
+  };
+
+  const flipImage = async () => {
+    if (photoUri) {
+      const flipped = await manipulateAsync(
+        photoUri,
+        [{ flip: FlipType.Horizontal }],
+        {
+          compress: 0.6,
+          format: SaveFormat.JPEG,
+        },
+      );
+      setPhotoUri(flipped.uri);
+    }
+  };
 
   useEffect(() => {
     (async () => {
@@ -72,6 +97,18 @@ export default function CameraScreen() {
               resizeMode="contain"
             />
           )}
+          <View style={styles.modalButtonsRow}>
+            <TouchableOpacity onPress={rotateImage} style={styles.iconButton}>
+              <Ionicons name="refresh-outline" size={40} color={ACCENT_COLOR} />
+            </TouchableOpacity>
+            <TouchableOpacity onPress={flipImage} style={styles.iconButton}>
+              <Ionicons
+                name="swap-horizontal-outline"
+                size={40}
+                color={ACCENT_COLOR}
+              />
+            </TouchableOpacity>
+          </View>
           <View style={styles.modalButtonsRow}>
             <TouchableOpacity
               onPress={async () => {
