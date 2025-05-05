@@ -1,5 +1,6 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
+  Alert,
   Image,
   Modal,
   Pressable,
@@ -13,6 +14,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { FlipType, manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 import * as MediaLibrary from 'expo-media-library';
 import * as Sharing from 'expo-sharing';
+
+const ACCENT_COLOR = '#00BFFF'; // deep sky blue (adjust if needed to match your logo)
 
 export default function CameraScreen() {
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
@@ -37,7 +40,7 @@ export default function CameraScreen() {
 
   const takePhoto = async () => {
     if (cameraRef.current) {
-      const photo = await cameraRef.current.takePictureAsync();
+      const photo = await cameraRef.current.takePictureAsync({ quality: 0.6 });
       try {
         let finalUri = photo.uri;
 
@@ -45,7 +48,7 @@ export default function CameraScreen() {
           const manipulated = await manipulateAsync(
             photo.uri,
             [{ flip: FlipType.Horizontal }],
-            { compress: 1, format: SaveFormat.JPEG },
+            { compress: 0.6, format: SaveFormat.JPEG },
           );
           finalUri = manipulated.uri;
         }
@@ -62,7 +65,7 @@ export default function CameraScreen() {
   const rotateImage = async () => {
     if (photoUri) {
       const rotated = await manipulateAsync(photoUri, [{ rotate: 90 }], {
-        compress: 1,
+        compress: 0.6,
         format: SaveFormat.JPEG,
       });
       setPhotoUri(rotated.uri);
@@ -74,7 +77,7 @@ export default function CameraScreen() {
       const flipped = await manipulateAsync(
         photoUri,
         [{ flip: FlipType.Horizontal }],
-        { compress: 1, format: SaveFormat.JPEG },
+        { compress: 0.6, format: SaveFormat.JPEG },
       );
       setPhotoUri(flipped.uri);
     }
@@ -91,8 +94,10 @@ export default function CameraScreen() {
           await MediaLibrary.addAssetsToAlbumAsync([asset], album, false);
         }
         console.log('Manually saved photo to system album: picabit');
+        Alert.alert('Guardado', 'La foto se ha guardado en el álbum picabit.');
       } catch (error) {
         console.error('Error saving photo to gallery:', error);
+        Alert.alert('Error', 'No se pudo guardar la foto.');
       }
     }
   };
@@ -101,8 +106,10 @@ export default function CameraScreen() {
     if (photoUri) {
       try {
         await Sharing.shareAsync(photoUri);
+        Alert.alert('Compartido', 'La foto se ha compartido.');
       } catch (error) {
         console.error('Error sharing photo:', error);
+        Alert.alert('Error', 'No se pudo compartir la foto.');
       }
     }
   };
@@ -112,7 +119,7 @@ export default function CameraScreen() {
     return (
       <View>
         <Pressable onPress={() => {}}>
-          <Ionicons name="camera-reverse" size={32} color="white" />
+          <Ionicons name="camera-reverse" size={32} color={ACCENT_COLOR} />
         </Pressable>
       </View>
     );
@@ -129,7 +136,7 @@ export default function CameraScreen() {
         <View
           style={{
             flex: 1,
-            backgroundColor: 'rgba(0,0,0,0.8)',
+            backgroundColor: 'rgba(18,18,18,0.9)',
             justifyContent: 'center',
             alignItems: 'center',
           }}
@@ -148,13 +155,17 @@ export default function CameraScreen() {
               }}
             >
               <TouchableOpacity onPress={rotateImage} style={styles.iconButton}>
-                <Ionicons name="refresh-outline" size={40} color="white" />
+                <Ionicons
+                  name="refresh-outline"
+                  size={40}
+                  color={ACCENT_COLOR}
+                />
               </TouchableOpacity>
               <TouchableOpacity onPress={flipImage} style={styles.iconButton}>
                 <Ionicons
                   name="swap-horizontal-outline"
                   size={40}
-                  color="white"
+                  color={ACCENT_COLOR}
                 />
               </TouchableOpacity>
             </View>
@@ -179,10 +190,13 @@ export default function CameraScreen() {
 
             <View style={{ alignItems: 'center' }}>
               <TouchableOpacity
-                onPress={() => setPhotoUri(null)}
+                onPress={() => {
+                  setPhotoUri(null);
+                  Alert.alert('Descartado', 'La foto ha sido descartada.');
+                }}
                 style={styles.iconButton}
               >
-                <Ionicons name="trash-outline" size={40} color="white" />
+                <Ionicons name="trash-outline" size={40} color={ACCENT_COLOR} />
               </TouchableOpacity>
             </View>
           </View>
@@ -195,12 +209,16 @@ export default function CameraScreen() {
               onPress={() =>
                 setCameraType((prev) => (prev === 'back' ? 'front' : 'back'))
               }
-              style={styles.iconButton}
+              style={[styles.iconButton]}
             >
-              <Ionicons name="sync-outline" size={40} color="white" />
+              <Ionicons
+                name="camera-reverse-outline"
+                size={60}
+                color={ACCENT_COLOR}
+              />
             </Pressable>
             <Pressable onPress={takePhoto} style={styles.iconButton}>
-              <Ionicons name="camera-outline" size={60} color="white" />
+              <Ionicons name="camera-outline" size={60} color={ACCENT_COLOR} />
             </Pressable>
           </View>
         )}
@@ -210,7 +228,7 @@ export default function CameraScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1 },
+  container: { flex: 1, backgroundColor: '#121212' },
   camera: { flex: 1 },
   preview: { flex: 1 },
   controls: {
@@ -231,6 +249,9 @@ const styles = StyleSheet.create({
   },
   iconButton: {
     marginHorizontal: 30,
+    backgroundColor: '#1F1F1F',
+    padding: 10,
+    borderRadius: 50,
   },
   overlayImage: {
     ...StyleSheet.absoluteFillObject,
@@ -261,13 +282,13 @@ const styles = StyleSheet.create({
     height: '100%',
   },
   modalButton: {
-    backgroundColor: '#fff',
-    padding: 10,
-    borderRadius: 8,
+    backgroundColor: '#FFC107', // golden amber
+    padding: 12,
+    borderRadius: 12,
     marginHorizontal: 10,
   },
   modalButtonText: {
-    color: '#000',
+    color: '#121212',
     fontWeight: 'bold',
   },
 });
