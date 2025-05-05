@@ -1,9 +1,4 @@
 import React, { useEffect, useRef, useState } from 'react';
-import * as MediaLibrary from 'expo-media-library';
-import * as Sharing from 'expo-sharing';
-import * as FileSystem from 'expo-file-system';
-import Toast from 'react-native-toast-message';
-import { FlipType, manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 import {
   ActivityIndicator,
   Image,
@@ -14,41 +9,24 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { Camera, CameraView } from 'expo-camera';
+import { Camera, CameraType, CameraView } from 'expo-camera';
 import { Ionicons } from '@expo/vector-icons';
+import * as MediaLibrary from 'expo-media-library';
+import * as Sharing from 'expo-sharing';
+import * as FileSystem from 'expo-file-system';
+import Toast from 'react-native-toast-message';
+import { FlipType, manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 
 const ACCENT_COLOR = '#00BFFF';
 
 export default function CameraScreen() {
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
-  const [photoUri, setPhotoUri] = useState(null);
-  const [cameraType, setCameraType] = useState('back');
+  const [photoUri, setPhotoUri] = useState<string | null>(null);
+  const [cameraType, setCameraType] = useState<CameraType>('back');
   const [isLoading, setIsLoading] = useState(false);
+  const [rotation, setRotation] = useState(0);
+  const [isFlipped, setIsFlipped] = useState(false);
   const cameraRef = useRef(null);
-
-  const rotateImage = async () => {
-    if (photoUri) {
-      const rotated = await manipulateAsync(photoUri, [{ rotate: 90 }], {
-        compress: 0.6,
-        format: SaveFormat.JPEG,
-      });
-      setPhotoUri(rotated.uri);
-    }
-  };
-
-  const flipImage = async () => {
-    if (photoUri) {
-      const flipped = await manipulateAsync(
-        photoUri,
-        [{ flip: FlipType.Horizontal }],
-        {
-          compress: 0.6,
-          format: SaveFormat.JPEG,
-        },
-      );
-      setPhotoUri(flipped.uri);
-    }
-  };
 
   useEffect(() => {
     (async () => {
@@ -66,6 +44,8 @@ export default function CameraScreen() {
           skipProcessing: true,
         });
         setPhotoUri(photo.uri);
+        setRotation(0);
+        setIsFlipped(false);
         console.log('Photo captured:', photo.uri);
       } catch (error) {
         console.error('Error capturing photo:', error);
@@ -73,6 +53,17 @@ export default function CameraScreen() {
         setIsLoading(false);
       }
     }
+  };
+
+  const processImageForSave = async () => {
+    const actions = [];
+    if (rotation !== 0) actions.push({ rotate: rotation });
+    if (isFlipped) actions.push({ flip: FlipType.Horizontal });
+    if (actions.length === 0 || !photoUri) return { uri: photoUri || '' }; // no changes or no photo
+    return await manipulateAsync(photoUri, actions, {
+      compress: 0.6,
+      format: SaveFormat.JPEG,
+    });
   };
 
   if (hasPermission === null) return <View />;
@@ -88,20 +79,35 @@ export default function CameraScreen() {
       />
       <Modal visible={!!photoUri} transparent animationType="fade">
         <View style={styles.modalContainer}>
-          {isLoading ? (
-            <ActivityIndicator size="large" color={ACCENT_COLOR} />
-          ) : (
-            <Image
-              source={{ uri: photoUri }}
-              style={styles.image}
-              resizeMode="contain"
-            />
+          <Image
+            source={photoUri ? { uri: photoUri } : undefined}
+            style={[
+              styles.image,
+              {
+                transform: [
+                  { rotate: `${rotation}deg` },
+                  { scaleX: isFlipped ? -1 : 1 },
+                ],
+              },
+            ]}
+            resizeMode="contain"
+          />
+          {isLoading && (
+            <View style={styles.loadingOverlay}>
+              <ActivityIndicator size="large" color={ACCENT_COLOR} />
+            </View>
           )}
           <View style={styles.modalButtonsRow}>
-            <TouchableOpacity onPress={rotateImage} style={styles.iconButton}>
+            <TouchableOpacity
+              onPress={() => setRotation((prev) => (prev + 90) % 360)}
+              style={styles.iconButton}
+            >
               <Ionicons name="refresh-outline" size={40} color={ACCENT_COLOR} />
             </TouchableOpacity>
-            <TouchableOpacity onPress={flipImage} style={styles.iconButton}>
+            <TouchableOpacity
+              onPress={() => setIsFlipped((prev) => !prev)}
+              style={styles.iconButton}
+            >
               <Ionicons
                 name="swap-horizontal-outline"
                 size={40}
@@ -112,9 +118,13 @@ export default function CameraScreen() {
           <View style={styles.modalButtonsRow}>
             <TouchableOpacity
               onPress={async () => {
+                setIsLoading(true);
                 try {
-                  await Sharing.shareAsync(photoUri);
-                  await FileSystem.deleteAsync(photoUri, { idempotent: true });
+                  const processed = await processImageForSave();
+                  await Sharing.shareAsync(processed.uri);
+                  await FileSystem.deleteAsync(processed.uri, {
+                    idempotent: true,
+                  });
                   setPhotoUri(null);
                   Toast.show({
                     type: 'success',
@@ -124,7 +134,6 @@ export default function CameraScreen() {
                   });
                 } catch (error) {
                   console.error('Error sharing photo:', error);
-                  await FileSystem.deleteAsync(photoUri, { idempotent: true });
                   setPhotoUri(null);
                   Toast.show({
                     type: 'error',
@@ -132,6 +141,8 @@ export default function CameraScreen() {
                     text2: 'No se pudo compartir la foto.',
                     visibilityTime: 1500,
                   });
+                } finally {
+                  setIsLoading(false);
                 }
               }}
               style={styles.modalButton}
@@ -140,8 +151,12 @@ export default function CameraScreen() {
             </TouchableOpacity>
             <TouchableOpacity
               onPress={async () => {
+                setIsLoading(true);
                 try {
-                  const asset = await MediaLibrary.createAssetAsync(photoUri);
+                  const processed = await processImageForSave();
+                  const asset = await MediaLibrary.createAssetAsync(
+                    processed.uri,
+                  );
                   const album = await MediaLibrary.getAlbumAsync('picabit');
                   if (!album) {
                     await MediaLibrary.createAlbumAsync(
@@ -156,7 +171,9 @@ export default function CameraScreen() {
                       false,
                     );
                   }
-                  await FileSystem.deleteAsync(photoUri, { idempotent: true });
+                  await FileSystem.deleteAsync(processed.uri, {
+                    idempotent: true,
+                  });
                   setPhotoUri(null);
                   Toast.show({
                     type: 'success',
@@ -166,7 +183,6 @@ export default function CameraScreen() {
                   });
                 } catch (error) {
                   console.error('Error saving photo:', error);
-                  await FileSystem.deleteAsync(photoUri, { idempotent: true });
                   setPhotoUri(null);
                   Toast.show({
                     type: 'error',
@@ -174,6 +190,8 @@ export default function CameraScreen() {
                     text2: 'No se pudo guardar la foto.',
                     visibilityTime: 1500,
                   });
+                } finally {
+                  setIsLoading(false);
                 }
               }}
               style={styles.modalButton}
@@ -183,8 +201,11 @@ export default function CameraScreen() {
           </View>
           <TouchableOpacity
             onPress={async () => {
+              setIsLoading(true);
               try {
-                await FileSystem.deleteAsync(photoUri, { idempotent: true });
+                if (photoUri != null) {
+                  await FileSystem.deleteAsync(photoUri, { idempotent: true });
+                }
                 setPhotoUri(null);
                 Toast.show({
                   type: 'success',
@@ -195,6 +216,8 @@ export default function CameraScreen() {
               } catch (error) {
                 console.error('Error discarding photo:', error);
                 setPhotoUri(null);
+              } finally {
+                setIsLoading(false);
               }
             }}
             style={styles.iconButton}
@@ -255,7 +278,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   image: { width: 300, height: 400, marginBottom: 20 },
-  modalButtons: { flexDirection: 'row', justifyContent: 'center' },
+  loadingOverlay: {
+    position: 'absolute',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
   modalButtonsRow: {
     flexDirection: 'row',
     justifyContent: 'space-around',

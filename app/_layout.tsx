@@ -48,7 +48,7 @@ const toastConfig = {
       }}
     />
   ),
-  error: (props) => (
+  error: (props: JSX.IntrinsicAttributes & BaseToastProps) => (
     <ErrorToast
       {...props}
       style={{ borderLeftColor: 'red', backgroundColor: '#1F1F1F' }}
