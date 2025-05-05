@@ -1,9 +1,18 @@
 import React, { useEffect, useRef, useState } from 'react';
-import { Image, Pressable, StyleSheet, View } from 'react-native';
+import {
+  Image,
+  Modal,
+  Pressable,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { Camera, CameraView } from 'expo-camera';
 import { Ionicons } from '@expo/vector-icons';
 import { FlipType, manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 import * as MediaLibrary from 'expo-media-library';
+import * as Sharing from 'expo-sharing';
 
 export default function CameraScreen() {
   const [hasPermission, setHasPermission] = useState<boolean | null>(null);
@@ -88,6 +97,16 @@ export default function CameraScreen() {
     }
   };
 
+  const sharePhoto = async () => {
+    if (photoUri) {
+      try {
+        await Sharing.shareAsync(photoUri);
+      } catch (error) {
+        console.error('Error sharing photo:', error);
+      }
+    }
+  };
+
   if (hasPermission === null) return <View />;
   if (!hasPermission)
     return (
@@ -106,39 +125,71 @@ export default function CameraScreen() {
         facing={cameraType}
         flash="off"
       />
-      {photoUri && (
-        <View style={styles.imageContainer}>
+      <Modal visible={!!photoUri} transparent animationType="slide">
+        <View
+          style={{
+            flex: 1,
+            backgroundColor: 'rgba(0,0,0,0.8)',
+            justifyContent: 'center',
+            alignItems: 'center',
+          }}
+        >
           <Image
-            source={{ uri: photoUri }}
-            style={styles.imageFit}
+            source={photoUri ? { uri: photoUri } : undefined}
+            style={{ width: 300, height: 400, marginBottom: 20 }}
             resizeMode="contain"
           />
-        </View>
-      )}
-      <View style={styles.controls}>
-        {photoUri ? (
-          <View style={styles.editControls}>
-            <Pressable onPress={rotateImage} style={styles.iconButton}>
-              <Ionicons name="refresh-circle-outline" size={40} color="white" />
-            </Pressable>
-            <Pressable onPress={flipImage} style={styles.iconButton}>
-              <Ionicons
-                name="swap-horizontal-outline"
-                size={40}
-                color="white"
-              />
-            </Pressable>
-            <Pressable onPress={savePhotoManually} style={styles.iconButton}>
-              <Ionicons name="save-outline" size={40} color="white" />
-            </Pressable>
-            <Pressable
-              onPress={() => setPhotoUri(null)}
-              style={styles.iconButton}
+          <View style={{ width: '90%' }}>
+            <View
+              style={{
+                flexDirection: 'row',
+                justifyContent: 'space-around',
+                marginBottom: 10,
+              }}
             >
-              <Ionicons name="refresh-outline" size={40} color="white" />
-            </Pressable>
+              <TouchableOpacity onPress={rotateImage} style={styles.iconButton}>
+                <Ionicons name="refresh-outline" size={40} color="white" />
+              </TouchableOpacity>
+              <TouchableOpacity onPress={flipImage} style={styles.iconButton}>
+                <Ionicons
+                  name="swap-horizontal-outline"
+                  size={40}
+                  color="white"
+                />
+              </TouchableOpacity>
+            </View>
+
+            <View
+              style={{
+                flexDirection: 'row',
+                justifyContent: 'space-around',
+                marginBottom: 10,
+              }}
+            >
+              <TouchableOpacity onPress={sharePhoto} style={styles.modalButton}>
+                <Text style={styles.modalButtonText}>Compartir</Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                onPress={savePhotoManually}
+                style={styles.modalButton}
+              >
+                <Text style={styles.modalButtonText}>Guardar</Text>
+              </TouchableOpacity>
+            </View>
+
+            <View style={{ alignItems: 'center' }}>
+              <TouchableOpacity
+                onPress={() => setPhotoUri(null)}
+                style={styles.iconButton}
+              >
+                <Ionicons name="trash-outline" size={40} color="white" />
+              </TouchableOpacity>
+            </View>
           </View>
-        ) : (
+        </View>
+      </Modal>
+      <View style={styles.controls}>
+        {!photoUri && (
           <View style={styles.mainControls}>
             <Pressable
               onPress={() =>
@@ -208,5 +259,15 @@ const styles = StyleSheet.create({
   imageFit: {
     width: '100%',
     height: '100%',
+  },
+  modalButton: {
+    backgroundColor: '#fff',
+    padding: 10,
+    borderRadius: 8,
+    marginHorizontal: 10,
+  },
+  modalButtonText: {
+    color: '#000',
+    fontWeight: 'bold',
   },
 });
