@@ -1,6 +1,5 @@
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  Alert,
   Image,
   Modal,
   Pressable,
@@ -14,6 +13,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { FlipType, manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 import * as MediaLibrary from 'expo-media-library';
 import * as Sharing from 'expo-sharing';
+import Toast from 'react-native-toast-message';
+import * as FileSystem from 'expo-file-system';
 
 const ACCENT_COLOR = '#00BFFF'; // deep sky blue (adjust if needed to match your logo)
 
@@ -27,9 +28,28 @@ export default function CameraScreen() {
 
   useEffect(() => {
     if (status?.status !== 'granted') {
-      requestPermission();
+      void requestPermission();
     }
-  }, [status]);
+  }, [requestPermission, status]);
+
+  useEffect(() => {
+    const clearCameraCache = async () => {
+      try {
+        const cameraFolder = `${FileSystem.cacheDirectory}Camera`;
+        const files = await FileSystem.readDirectoryAsync(cameraFolder);
+        if (files.length === 0) return;
+        for (const file of files) {
+          await FileSystem.deleteAsync(`${cameraFolder}/${file}`, {
+            idempotent: true,
+          });
+        }
+      } catch (error) {
+        console.error('Error clearing camera cache:', error);
+      }
+    };
+
+    void clearCameraCache();
+  }, []);
 
   useEffect(() => {
     (async () => {
@@ -93,11 +113,23 @@ export default function CameraScreen() {
         } else {
           await MediaLibrary.addAssetsToAlbumAsync([asset], album, false);
         }
-        console.log('Manually saved photo to system album: picabit');
-        Alert.alert('Guardado', 'La foto se ha guardado en el álbum picabit.');
+        await FileSystem.deleteAsync(photoUri, { idempotent: true });
+        setPhotoUri(null);
+        Toast.show({
+          type: 'success',
+          text1: 'Guardado',
+          text2: 'La foto se ha guardado en el álbum picabit.',
+          visibilityTime: 1500,
+        });
       } catch (error) {
         console.error('Error saving photo to gallery:', error);
-        Alert.alert('Error', 'No se pudo guardar la foto.');
+        setPhotoUri(null);
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: 'No se pudo guardar la foto.',
+          visibilityTime: 1500,
+        });
       }
     }
   };
@@ -106,10 +138,23 @@ export default function CameraScreen() {
     if (photoUri) {
       try {
         await Sharing.shareAsync(photoUri);
-        Alert.alert('Compartido', 'La foto se ha compartido.');
+        await FileSystem.deleteAsync(photoUri, { idempotent: true });
+        setPhotoUri(null);
+        Toast.show({
+          type: 'success',
+          text1: 'Listo',
+          text2: 'Compartir completado',
+          visibilityTime: 1500,
+        });
       } catch (error) {
         console.error('Error sharing photo:', error);
-        Alert.alert('Error', 'No se pudo compartir la foto.');
+        setPhotoUri(null);
+        Toast.show({
+          type: 'error',
+          text1: 'Error',
+          text2: 'No se pudo compartir la foto.',
+          visibilityTime: 1500,
+        });
       }
     }
   };
@@ -190,9 +235,19 @@ export default function CameraScreen() {
 
             <View style={{ alignItems: 'center' }}>
               <TouchableOpacity
-                onPress={() => {
+                onPress={async () => {
+                  if (photoUri) {
+                    await FileSystem.deleteAsync(photoUri, {
+                      idempotent: true,
+                    });
+                  }
                   setPhotoUri(null);
-                  Alert.alert('Descartado', 'La foto ha sido descartada.');
+                  Toast.show({
+                    type: 'success',
+                    text1: 'Descartado',
+                    text2: 'La foto ha sido descartada.',
+                    visibilityTime: 1500,
+                  });
                 }}
                 style={styles.iconButton}
               >
