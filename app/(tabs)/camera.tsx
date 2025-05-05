@@ -14,7 +14,6 @@ import { Ionicons } from '@expo/vector-icons';
 import * as MediaLibrary from 'expo-media-library';
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system';
-import Toast from 'react-native-toast-message';
 import { FlipType, manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 
 const ACCENT_COLOR = '#00BFFF';
@@ -26,6 +25,9 @@ export default function CameraScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [rotation, setRotation] = useState(0);
   const [isFlipped, setIsFlipped] = useState(false);
+  const [feedbackIcon, setFeedbackIcon] = useState<null | 'success' | 'error'>(
+    null,
+  );
   const cameraRef = useRef<CameraView>(null);
 
   useEffect(() => {
@@ -46,6 +48,7 @@ export default function CameraScreen() {
         setPhotoUri(photo.uri);
         setRotation(0);
         setIsFlipped(false);
+        setFeedbackIcon(null);
         console.log('Photo captured:', photo.uri);
       } catch (error) {
         console.error('Error capturing photo:', error);
@@ -59,7 +62,7 @@ export default function CameraScreen() {
     const actions = [];
     if (rotation !== 0) actions.push({ rotate: rotation });
     if (isFlipped) actions.push({ flip: FlipType.Horizontal });
-    if (actions.length === 0 || !photoUri) return { uri: photoUri || '' }; // no changes or no photo
+    if (actions.length === 0 || !photoUri) return { uri: photoUri || '' };
     return await manipulateAsync(photoUri, actions, {
       compress: 0.6,
       format: SaveFormat.JPEG,
@@ -126,21 +129,17 @@ export default function CameraScreen() {
                     idempotent: true,
                   });
                   setPhotoUri(null);
-                  Toast.show({
-                    type: 'success',
-                    text1: 'Compartido',
-                    text2: 'Se abrió el diálogo para compartir.',
-                    visibilityTime: 1500,
-                  });
+                  setFeedbackIcon('success');
+                  setTimeout(() => {
+                    setFeedbackIcon(null);
+                  }, 1500);
                 } catch (error) {
                   console.error('Error sharing photo:', error);
                   setPhotoUri(null);
-                  Toast.show({
-                    type: 'error',
-                    text1: 'Error',
-                    text2: 'No se pudo compartir la foto.',
-                    visibilityTime: 1500,
-                  });
+                  setFeedbackIcon('error');
+                  setTimeout(() => {
+                    setFeedbackIcon(null);
+                  }, 1000);
                 } finally {
                   setIsLoading(false);
                 }
@@ -175,21 +174,17 @@ export default function CameraScreen() {
                     idempotent: true,
                   });
                   setPhotoUri(null);
-                  Toast.show({
-                    type: 'success',
-                    text1: 'Guardado',
-                    text2: 'La foto se ha guardado en picabit.',
-                    visibilityTime: 1500,
-                  });
+                  setFeedbackIcon('success');
+                  setTimeout(() => {
+                    setFeedbackIcon(null);
+                  }, 1000);
                 } catch (error) {
                   console.error('Error saving photo:', error);
                   setPhotoUri(null);
-                  Toast.show({
-                    type: 'error',
-                    text1: 'Error',
-                    text2: 'No se pudo guardar la foto.',
-                    visibilityTime: 1500,
-                  });
+                  setFeedbackIcon('error');
+                  setTimeout(() => {
+                    setFeedbackIcon(null);
+                  }, 1000);
                 } finally {
                   setIsLoading(false);
                 }
@@ -207,15 +202,17 @@ export default function CameraScreen() {
                   await FileSystem.deleteAsync(photoUri, { idempotent: true });
                 }
                 setPhotoUri(null);
-                Toast.show({
-                  type: 'success',
-                  text1: 'Descartado',
-                  text2: 'La foto ha sido eliminada.',
-                  visibilityTime: 1500,
-                });
+                setFeedbackIcon('success');
+                setTimeout(() => {
+                  setFeedbackIcon(null);
+                }, 1000);
               } catch (error) {
                 console.error('Error discarding photo:', error);
                 setPhotoUri(null);
+                setFeedbackIcon('error');
+                setTimeout(() => {
+                  setFeedbackIcon(null);
+                }, 1000);
               } finally {
                 setIsLoading(false);
               }
@@ -226,6 +223,19 @@ export default function CameraScreen() {
           </TouchableOpacity>
         </View>
       </Modal>
+
+      {!photoUri && feedbackIcon && (
+        <View style={styles.feedbackOverlay}>
+          <Ionicons
+            name={
+              feedbackIcon === 'success' ? 'checkmark-circle' : 'close-circle'
+            }
+            size={120}
+            color={ACCENT_COLOR}
+          />
+        </View>
+      )}
+
       <View style={styles.controls}>
         {!photoUri && (
           <View style={styles.mainControls}>
@@ -282,6 +292,18 @@ const styles = StyleSheet.create({
     position: 'absolute',
     justifyContent: 'center',
     alignItems: 'center',
+  },
+  feedbackOverlay: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 9999,
+    elevation: 9999,
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
   },
   modalButtonsRow: {
     flexDirection: 'row',
