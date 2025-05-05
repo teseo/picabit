@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Image,
@@ -9,17 +9,17 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
-import { Camera, CameraType, CameraView } from 'expo-camera';
+import { CameraType, CameraView } from 'expo-camera';
 import { Ionicons } from '@expo/vector-icons';
 import * as MediaLibrary from 'expo-media-library';
 import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system';
 import { FlipType, manipulateAsync, SaveFormat } from 'expo-image-manipulator';
+import usePermissions from '@/utils/usePermissions';
 
 const ACCENT_COLOR = '#00BFFF';
 
 export default function CameraScreen() {
-  const [hasPermission, setHasPermission] = useState<boolean | null>(null);
   const [photoUri, setPhotoUri] = useState<string | null>(null);
   const [cameraType, setCameraType] = useState<CameraType>('back');
   const [isLoading, setIsLoading] = useState(false);
@@ -30,12 +30,8 @@ export default function CameraScreen() {
   );
   const cameraRef = useRef<CameraView>(null);
 
-  useEffect(() => {
-    (async () => {
-      const { status } = await Camera.requestCameraPermissionsAsync();
-      setHasPermission(status === 'granted');
-    })();
-  }, []);
+  const { cameraPermission } = usePermissions();
+  const hasPermission = cameraPermission?.granted;
 
   const takePhoto = async () => {
     if (cameraRef.current) {
