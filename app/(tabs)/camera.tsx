@@ -287,7 +287,12 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  image: { width: 300, height: 400, marginBottom: 20 },
+  image: {
+    marginTop: 30,
+    width: 350,
+    height: undefined,
+    aspectRatio: 1,
+  },
   loadingOverlay: {
     position: 'absolute',
     justifyContent: 'center',
