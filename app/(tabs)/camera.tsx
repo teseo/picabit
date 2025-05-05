@@ -1,4 +1,8 @@
 import React, { useEffect, useRef, useState } from 'react';
+import * as MediaLibrary from 'expo-media-library';
+import * as Sharing from 'expo-sharing';
+import * as FileSystem from 'expo-file-system';
+import Toast from 'react-native-toast-message';
 import {
   ActivityIndicator,
   Image,
@@ -68,14 +72,98 @@ export default function CameraScreen() {
               resizeMode="contain"
             />
           )}
-          <View style={styles.modalButtons}>
+          <View style={styles.modalButtonsRow}>
             <TouchableOpacity
-              onPress={() => setPhotoUri(null)}
+              onPress={async () => {
+                try {
+                  await Sharing.shareAsync(photoUri);
+                  await FileSystem.deleteAsync(photoUri, { idempotent: true });
+                  setPhotoUri(null);
+                  Toast.show({
+                    type: 'success',
+                    text1: 'Compartido',
+                    text2: 'Se abrió el diálogo para compartir.',
+                    visibilityTime: 1500,
+                  });
+                } catch (error) {
+                  console.error('Error sharing photo:', error);
+                  await FileSystem.deleteAsync(photoUri, { idempotent: true });
+                  setPhotoUri(null);
+                  Toast.show({
+                    type: 'error',
+                    text1: 'Error',
+                    text2: 'No se pudo compartir la foto.',
+                    visibilityTime: 1500,
+                  });
+                }
+              }}
               style={styles.modalButton}
             >
-              <Text style={styles.modalButtonText}>Cerrar</Text>
+              <Text style={styles.modalButtonText}>Compartir</Text>
+            </TouchableOpacity>
+            <TouchableOpacity
+              onPress={async () => {
+                try {
+                  const asset = await MediaLibrary.createAssetAsync(photoUri);
+                  const album = await MediaLibrary.getAlbumAsync('picabit');
+                  if (!album) {
+                    await MediaLibrary.createAlbumAsync(
+                      'picabit',
+                      asset,
+                      false,
+                    );
+                  } else {
+                    await MediaLibrary.addAssetsToAlbumAsync(
+                      [asset],
+                      album,
+                      false,
+                    );
+                  }
+                  await FileSystem.deleteAsync(photoUri, { idempotent: true });
+                  setPhotoUri(null);
+                  Toast.show({
+                    type: 'success',
+                    text1: 'Guardado',
+                    text2: 'La foto se ha guardado en picabit.',
+                    visibilityTime: 1500,
+                  });
+                } catch (error) {
+                  console.error('Error saving photo:', error);
+                  await FileSystem.deleteAsync(photoUri, { idempotent: true });
+                  setPhotoUri(null);
+                  Toast.show({
+                    type: 'error',
+                    text1: 'Error',
+                    text2: 'No se pudo guardar la foto.',
+                    visibilityTime: 1500,
+                  });
+                }
+              }}
+              style={styles.modalButton}
+            >
+              <Text style={styles.modalButtonText}>Guardar</Text>
             </TouchableOpacity>
           </View>
+          <TouchableOpacity
+            onPress={async () => {
+              try {
+                await FileSystem.deleteAsync(photoUri, { idempotent: true });
+                setPhotoUri(null);
+                Toast.show({
+                  type: 'success',
+                  text1: 'Descartado',
+                  text2: 'La foto ha sido eliminada.',
+                  visibilityTime: 1500,
+                });
+              } catch (error) {
+                console.error('Error discarding photo:', error);
+                setPhotoUri(null);
+              }
+            }}
+            style={styles.iconButton}
+          >
+            <Ionicons name="trash-outline" size={40} color={ACCENT_COLOR} />
+          </TouchableOpacity>
         </View>
       </Modal>
       <View style={styles.controls}>
@@ -131,6 +219,12 @@ const styles = StyleSheet.create({
   },
   image: { width: 300, height: 400, marginBottom: 20 },
   modalButtons: { flexDirection: 'row', justifyContent: 'center' },
+  modalButtonsRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-around',
+    width: '100%',
+    marginBottom: 10,
+  },
   modalButton: {
     backgroundColor: '#FFC107',
     padding: 12,
