@@ -258,7 +258,7 @@ export default function CameraScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#121212' },
+  container: { flex: 1, backgroundColor: '#0d2636' },
   camera: { flex: 1 },
   controls: {
     position: 'absolute',
@@ -319,5 +319,5 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginHorizontal: 10,
   },
-  modalButtonText: { color: '#121212', fontWeight: 'bold' },
+  modalButtonText: { color: '#0d2636', fontWeight: 'bold' },
 });
