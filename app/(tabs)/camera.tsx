@@ -285,6 +285,7 @@ const styles = StyleSheet.create({
   },
   image: {
     marginTop: 30,
+    marginBottom: 10,
     width: 350,
     height: undefined,
     aspectRatio: 1,
