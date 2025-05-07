@@ -16,6 +16,7 @@ import * as Sharing from 'expo-sharing';
 import * as FileSystem from 'expo-file-system';
 import { FlipType, manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 import usePermissions from '@/utils/usePermissions';
+import { useTranslation } from 'react-i18next';
 
 const ACCENT_COLOR = '#00BFFF';
 
@@ -28,6 +29,7 @@ export default function CameraScreen() {
   const [feedbackIcon, setFeedbackIcon] = useState<null | 'success' | 'error'>(
     null,
   );
+  const { t } = useTranslation();
   const cameraRef = useRef<CameraView>(null);
 
   const { cameraPermission } = usePermissions();
@@ -142,7 +144,7 @@ export default function CameraScreen() {
               }}
               style={styles.modalButton}
             >
-              <Text style={styles.modalButtonText}>Compartir</Text>
+              <Text style={styles.modalButtonText}>{t('share')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               onPress={async () => {
@@ -187,7 +189,7 @@ export default function CameraScreen() {
               }}
               style={styles.modalButton}
             >
-              <Text style={styles.modalButtonText}>Guardar</Text>
+              <Text style={styles.modalButtonText}>{t('save')}</Text>
             </TouchableOpacity>
           </View>
           <TouchableOpacity

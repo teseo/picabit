@@ -17,6 +17,7 @@ import Toast, {
 import { View } from 'react-native';
 
 import { useColorScheme } from '@/components/useColorScheme';
+import './../utils/i18n';
 
 export {
   // Catch any errors thrown by the Layout component.
@@ -68,6 +69,7 @@ const toastConfig = {
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
+    // eslint-disable-next-line @typescript-eslint/no-require-imports
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
     ...FontAwesome.font,
   });
