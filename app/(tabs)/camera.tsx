@@ -67,6 +67,85 @@ export default function CameraScreen() {
     });
   };
 
+  const handleShare = async () => {
+    setIsLoading(true);
+    try {
+      const processed = await processImageForSave();
+      await Sharing.shareAsync(processed.uri);
+      await FileSystem.deleteAsync(processed.uri, {
+        idempotent: true,
+      });
+      setPhotoUri(null);
+      setFeedbackIcon('success');
+      setTimeout(() => {
+        setFeedbackIcon(null);
+      }, 1500);
+    } catch (error) {
+      console.error('Error sharing photo:', error);
+      setPhotoUri(null);
+      setFeedbackIcon('error');
+      setTimeout(() => {
+        setFeedbackIcon(null);
+      }, 1000);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleSave = async () => {
+    setIsLoading(true);
+    try {
+      const processed = await processImageForSave();
+      const asset = await MediaLibrary.createAssetAsync(processed.uri);
+      const album = await MediaLibrary.getAlbumAsync('picabit');
+      if (!album) {
+        await MediaLibrary.createAlbumAsync('picabit', asset, false);
+      } else {
+        await MediaLibrary.addAssetsToAlbumAsync([asset], album, false);
+      }
+      await FileSystem.deleteAsync(processed.uri, {
+        idempotent: true,
+      });
+      setPhotoUri(null);
+      setFeedbackIcon('success');
+      setTimeout(() => {
+        setFeedbackIcon(null);
+      }, 1000);
+    } catch (error) {
+      console.error('Error saving photo:', error);
+      setPhotoUri(null);
+      setFeedbackIcon('error');
+      setTimeout(() => {
+        setFeedbackIcon(null);
+      }, 1000);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  const handleDiscard = async () => {
+    setIsLoading(true);
+    try {
+      if (photoUri != null) {
+        await FileSystem.deleteAsync(photoUri, { idempotent: true });
+      }
+      setPhotoUri(null);
+      setFeedbackIcon('success');
+      setTimeout(() => {
+        setFeedbackIcon(null);
+      }, 1000);
+    } catch (error) {
+      console.error('Error discarding photo:', error);
+      setPhotoUri(null);
+      setFeedbackIcon('error');
+      setTimeout(() => {
+        setFeedbackIcon(null);
+      }, 1000);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
   if (hasPermission === null) return <View />;
   if (!hasPermission) return <Text>No access to camera</Text>;
 
@@ -117,106 +196,14 @@ export default function CameraScreen() {
             </TouchableOpacity>
           </View>
           <View style={styles.modalButtonsRow}>
-            <TouchableOpacity
-              onPress={async () => {
-                setIsLoading(true);
-                try {
-                  const processed = await processImageForSave();
-                  await Sharing.shareAsync(processed.uri);
-                  await FileSystem.deleteAsync(processed.uri, {
-                    idempotent: true,
-                  });
-                  setPhotoUri(null);
-                  setFeedbackIcon('success');
-                  setTimeout(() => {
-                    setFeedbackIcon(null);
-                  }, 1500);
-                } catch (error) {
-                  console.error('Error sharing photo:', error);
-                  setPhotoUri(null);
-                  setFeedbackIcon('error');
-                  setTimeout(() => {
-                    setFeedbackIcon(null);
-                  }, 1000);
-                } finally {
-                  setIsLoading(false);
-                }
-              }}
-              style={styles.modalButton}
-            >
+            <TouchableOpacity onPress={handleShare} style={styles.modalButton}>
               <Text style={styles.modalButtonText}>{t('share')}</Text>
             </TouchableOpacity>
-            <TouchableOpacity
-              onPress={async () => {
-                setIsLoading(true);
-                try {
-                  const processed = await processImageForSave();
-                  const asset = await MediaLibrary.createAssetAsync(
-                    processed.uri,
-                  );
-                  const album = await MediaLibrary.getAlbumAsync('picabit');
-                  if (!album) {
-                    await MediaLibrary.createAlbumAsync(
-                      'picabit',
-                      asset,
-                      false,
-                    );
-                  } else {
-                    await MediaLibrary.addAssetsToAlbumAsync(
-                      [asset],
-                      album,
-                      false,
-                    );
-                  }
-                  await FileSystem.deleteAsync(processed.uri, {
-                    idempotent: true,
-                  });
-                  setPhotoUri(null);
-                  setFeedbackIcon('success');
-                  setTimeout(() => {
-                    setFeedbackIcon(null);
-                  }, 1000);
-                } catch (error) {
-                  console.error('Error saving photo:', error);
-                  setPhotoUri(null);
-                  setFeedbackIcon('error');
-                  setTimeout(() => {
-                    setFeedbackIcon(null);
-                  }, 1000);
-                } finally {
-                  setIsLoading(false);
-                }
-              }}
-              style={styles.modalButton}
-            >
+            <TouchableOpacity onPress={handleSave} style={styles.modalButton}>
               <Text style={styles.modalButtonText}>{t('save')}</Text>
             </TouchableOpacity>
           </View>
-          <TouchableOpacity
-            onPress={async () => {
-              setIsLoading(true);
-              try {
-                if (photoUri != null) {
-                  await FileSystem.deleteAsync(photoUri, { idempotent: true });
-                }
-                setPhotoUri(null);
-                setFeedbackIcon('success');
-                setTimeout(() => {
-                  setFeedbackIcon(null);
-                }, 1000);
-              } catch (error) {
-                console.error('Error discarding photo:', error);
-                setPhotoUri(null);
-                setFeedbackIcon('error');
-                setTimeout(() => {
-                  setFeedbackIcon(null);
-                }, 1000);
-              } finally {
-                setIsLoading(false);
-              }
-            }}
-            style={styles.iconButton}
-          >
+          <TouchableOpacity onPress={handleDiscard} style={styles.iconButton}>
             <Ionicons name="trash-outline" size={40} color={ACCENT_COLOR} />
           </TouchableOpacity>
         </View>
