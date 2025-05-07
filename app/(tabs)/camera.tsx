@@ -224,27 +224,33 @@ export default function CameraScreen() {
         </View>
       )}
 
-      <View style={styles.controls}>
-        {!photoUri && isCameraReady && (
-          <View style={styles.mainControls}>
-            <Pressable
-              onPress={() =>
-                setCameraType((prev) => (prev === 'back' ? 'front' : 'back'))
-              }
-              style={styles.iconButton}
-            >
-              <Ionicons
-                name="camera-reverse-outline"
-                size={60}
-                color={ACCENT_COLOR}
-              />
-            </Pressable>
-            <Pressable onPress={takePhoto} style={styles.iconButton}>
-              <Ionicons name="camera-outline" size={60} color={ACCENT_COLOR} />
-            </Pressable>
-          </View>
-        )}
-      </View>
+      {isCameraReady && !photoUri && (
+        <View style={styles.controls}>
+          {!photoUri && isCameraReady && (
+            <View style={styles.mainControls}>
+              <Pressable
+                onPress={() =>
+                  setCameraType((prev) => (prev === 'back' ? 'front' : 'back'))
+                }
+                style={styles.iconButton}
+              >
+                <Ionicons
+                  name="camera-reverse-outline"
+                  size={60}
+                  color={ACCENT_COLOR}
+                />
+              </Pressable>
+              <Pressable onPress={takePhoto} style={styles.iconButton}>
+                <Ionicons
+                  name="camera-outline"
+                  size={60}
+                  color={ACCENT_COLOR}
+                />
+              </Pressable>
+            </View>
+          )}
+        </View>
+      )}
     </View>
   );
 }
