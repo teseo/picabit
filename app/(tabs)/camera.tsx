@@ -17,6 +17,7 @@ import * as FileSystem from 'expo-file-system';
 import { FlipType, manipulateAsync, SaveFormat } from 'expo-image-manipulator';
 import usePermissions from '@/utils/usePermissions';
 import { useTranslation } from 'react-i18next';
+import isInternal from '@/utils/isInternal';
 
 const ACCENT_COLOR = '#00BFFF';
 
@@ -104,9 +105,9 @@ export default function CameraScreen() {
       } else {
         await MediaLibrary.addAssetsToAlbumAsync([asset], album, false);
       }
-      await FileSystem.deleteAsync(processed.uri, {
-        idempotent: true,
-      });
+      if (isInternal(processed.uri)) {
+        await FileSystem.deleteAsync(processed.uri, { idempotent: true });
+      }
       setPhotoUri(null);
       setFeedbackIcon('success');
       setTimeout(() => {
@@ -249,7 +250,7 @@ export default function CameraScreen() {
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#0d2636' },
+  container: { flex: 1, backgroundColor: '#002339' },
   camera: { flex: 1 },
   controls: {
     position: 'absolute',
@@ -312,5 +313,5 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     marginHorizontal: 10,
   },
-  modalButtonText: { color: '#0d2636', fontWeight: 'bold' },
+  modalButtonText: { color: '#002339', fontWeight: 'bold' },
 });
