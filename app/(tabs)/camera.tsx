@@ -29,6 +29,7 @@ export default function CameraScreen() {
   const [feedbackIcon, setFeedbackIcon] = useState<null | 'success' | 'error'>(
     null,
   );
+  const [isCameraReady, setIsCameraReady] = useState(false);
   const { t } = useTranslation();
   const cameraRef = useRef<CameraView>(null);
 
@@ -156,6 +157,7 @@ export default function CameraScreen() {
         ref={cameraRef}
         facing={cameraType}
         flash="off"
+        onCameraReady={() => setIsCameraReady(true)}
       />
       <Modal visible={!!photoUri} transparent animationType="fade">
         <View style={styles.modalContainer}>
@@ -222,7 +224,7 @@ export default function CameraScreen() {
       )}
 
       <View style={styles.controls}>
-        {!photoUri && (
+        {!photoUri && isCameraReady && (
           <View style={styles.mainControls}>
             <Pressable
               onPress={() =>
@@ -256,9 +258,11 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   mainControls: {
-    flexDirection: 'row',
-    justifyContent: 'space-around',
+    position: 'absolute',
+    bottom: 30,
     width: '100%',
+    flexDirection: 'row',
+    justifyContent: 'center',
   },
   iconButton: {
     marginHorizontal: 30,
