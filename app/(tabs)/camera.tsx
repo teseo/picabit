@@ -200,10 +200,25 @@ export default function CameraScreen() {
           </View>
           <View style={styles.modalButtonsRow}>
             <TouchableOpacity onPress={handleShare} style={styles.modalButton}>
-              <Text style={styles.modalButtonText}>{t('share')}</Text>
+              <Text
+                allowFontScaling={false}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                style={styles.modalButtonText}
+              >
+                {' '}
+                {t('share')}
+              </Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={handleSave} style={styles.modalButton}>
-              <Text style={styles.modalButtonText}>{t('save')}</Text>
+              <Text
+                allowFontScaling={false}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                style={styles.modalButtonText}
+              >
+                {t('save')}
+              </Text>
             </TouchableOpacity>
           </View>
           <TouchableOpacity onPress={handleDiscard} style={styles.iconButton}>
