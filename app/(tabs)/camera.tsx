@@ -210,6 +210,19 @@ export default function CameraScreen() {
                 {t('share')}
               </Text>
             </TouchableOpacity>
+            <TouchableOpacity
+              onPress={() => alert('hola papi')}
+              style={styles.modalButton}
+            >
+              <Text
+                allowFontScaling={false}
+                numberOfLines={1}
+                adjustsFontSizeToFit
+                style={styles.modalButtonText}
+              >
+                {t('Meguitan')}
+              </Text>
+            </TouchableOpacity>
             <TouchableOpacity onPress={handleSave} style={styles.modalButton}>
               <Text
                 allowFontScaling={false}
