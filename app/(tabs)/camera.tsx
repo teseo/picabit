@@ -1,6 +1,7 @@
 import React, { useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Dimensions,
   Image,
   Modal,
   Pressable,
@@ -151,6 +152,12 @@ export default function CameraScreen() {
   if (hasPermission === null) return <View />;
   if (!hasPermission) return <Text>No access to camera</Text>;
 
+  const getImageHeight = () => {
+    const screenHeight = Dimensions.get('window').height;
+    if (screenHeight <= 667) return 225; // iPhone SE 1st gen
+    return undefined; // modern iPhone & Android
+  };
+
   return (
     <View style={styles.container}>
       <CameraView
@@ -166,6 +173,7 @@ export default function CameraScreen() {
             source={photoUri ? { uri: photoUri } : undefined}
             style={[
               styles.image,
+              { height: getImageHeight() },
               {
                 transform: [
                   { rotate: `${rotation}deg` },
@@ -208,19 +216,6 @@ export default function CameraScreen() {
               >
                 {' '}
                 {t('share')}
-              </Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              onPress={() => alert('hola papi')}
-              style={styles.modalButton}
-            >
-              <Text
-                allowFontScaling={false}
-                numberOfLines={1}
-                adjustsFontSizeToFit
-                style={styles.modalButtonText}
-              >
-                {t('Meguitan')}
               </Text>
             </TouchableOpacity>
             <TouchableOpacity onPress={handleSave} style={styles.modalButton}>
